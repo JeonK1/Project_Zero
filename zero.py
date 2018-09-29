@@ -1,4 +1,5 @@
 #아침에 비오는지 체크하는 기능 에러있음
+from bs4 import BeautifulSoup
 from selenium import webdriver #외부
 import pyowm #외부
 import datetime
@@ -6,6 +7,7 @@ import pytz #외부
 import os
 import random
 import re
+import requests #외부
 import sqlite3
 import sys
 import threading
@@ -78,6 +80,8 @@ class Zero:
             self.printClimate(self.chkClimate(order))
         elif(self.chkAlarm(order)==True):
             self.setAlarm()
+        elif(self.chkLeast_N_Webtoon(order)==True):
+            self.print_N_Webtoon_Fin_Least10()
     def chkAssign_add(self, order): #'과제정보 추가' 판단함수
         order = order.strip()
         chkHdler1 = re.compile('^[a-zA-Z가-힣\s]*(과제)[a-zA-Z가-힣\s]*(등록|추가|생기|생겼|나왔)[a-zA-Z가-힣\s]*')
@@ -375,6 +379,13 @@ class Zero:
     def chkAlarm(self, order):
         order=order.strip()
         chkHdler1=re.compile('(알람설정|알람 설정)')
+        if(chkHdler1.match(order)):
+            return True
+        else:
+            return False
+    def chkLeast_N_Webtoon(self, order):
+        order=order.strip()
+        chkHdler1=re.compile('(네이버)[a-zA-Z가-힣\s]*(완결웹툰)[a-zA-Z가-힣\s]*')
         if(chkHdler1.match(order)):
             return True
         else:
@@ -1270,6 +1281,23 @@ class Zero:
         time.sleep(second)
         print()
         print('#### 알람 딸랑딸랑 ☏♬~ ####')
+    def print_N_Webtoon_Fin_Least10(self):
+        finWebtoonURL = 'https://comic.naver.com/webtoon/finish.nhn'
+        webtoonParse = requests.get(url=finWebtoonURL)
+        webtoonSoup = BeautifulSoup(webtoonParse.text, 'html.parser')
+        webtoonList = webtoonSoup.find("ul", class_="img_list")
+        count = 0
+        webtoonLeastTop10 = []
+        for webtoon in webtoonList.find_all('li'):
+            if (count >= 10):
+                break
+            webtoonLeastTop10.append(webtoon.dl.dt.a['title'])
+            count += 1
+        print('-------------------------------------------')
+        print('네이버 완결웹툰 최신 10개(위에서부터)')
+        for webtoon in webtoonLeastTop10:
+            print(webtoon)
+        print('-------------------------------------------')
 myCat=Zero()
 myCat.printZero()
 myCat.greeting()
